@@ -20,7 +20,7 @@
 
 -------------------------------------
 
-# For install in dependencies and uninstalling command
+# For installing and uninstalling dependencies command
 
 # only for development environment
 - npm i -D "Dependency Name"

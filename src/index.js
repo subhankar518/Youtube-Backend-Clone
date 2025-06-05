@@ -1,5 +1,6 @@
 import { connectDB } from "./db/connectDb.js";
 import dotenv from "dotenv"
+import { app } from "./app.js";
 
 // require('dotenv').config({path: './env'}) this will work fine but we will not use it.
 
@@ -7,7 +8,14 @@ dotenv.config({
     path: './env'
 })
 
-connectDB();
+const port=process.env.PORT || 8001
+
+connectDB().then(()=>{
+    app.on("error", (error)=> console.log("ERROR: ",error));
+    app.listen(port, ()=>console.log(`Server is runing on ${port}`));
+}).catch((err)=>{
+    console.log("MongoDB Connection Failed !!",err);
+});
 
 
 

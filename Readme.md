@@ -32,3 +32,8 @@
 
 - I will be using import statement for the entire project, that's why I have used 
 "type": "module" in "package.json"
+
+-------------------------------------
+
+ For using experimental features we can use 
+ "dev": `nodemon -r dotenv/config --experimental-json-modules src/index.js`

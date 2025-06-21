@@ -198,6 +198,105 @@ const newAccessTokenRequest = asyncHandler( async (req, res) => {
     }
 })
 
+const changeCurrentPassword = asyncHandler ( async (req,res) => {
+    const {oldPassword, newPassword} = req.body;
+
+    const existedUser = await User.findById(req.user?._id);
+    const isPasswordCurrect = existedUser.isPasswordCurrect(oldPassword);
+    if(!isPasswordCurrect) {
+        throw new ApiError(400,"Password is incurrect");
+    }
+
+    existedUser.password = newPassword;
+
+    await existedUser.save({validateBeforeSave: false});
+
+    return res.status(200).json(
+        new ApiRespose(
+            200, "Password Changed Successfully"
+        )
+    )
+})
+
+const getCurrentUser = asyncHandler ( async (req,res) => {
+    return res.status(200).json(200, req.user, "Current User fetched Successfully");
+}) 
+
+const updateAccountDetails = asyncHandler ( async (req,res) => {
+    const {fullName, email, userName, phone, country} = req.body;
+
+    if(!fullName || !email || !userName || !phone || !country){
+        throw new ApiError(400, "All fields are required");
+    }
+
+    const userResponse= User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                fullName: fullName,
+                email: email,
+                userName: userName,
+                phone: phone,
+                country: country
+            }
+        },
+        {
+            new: true // for this it will return the new updated object.
+        }
+    ).select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiRespose(200, userResponse ,"User details updated successfully")
+    );
+})
+
+const updateAvatarAndCoverImage = asyncHandler ( async (req,res) => {
+    const uploadedfiles= req.files;
+
+    const avatarLocalPath = uploadedfiles?.avatar && uploadedfiles?.avatar[0]?.path;
+    const coverImageLocalPath = uploadedfiles?.coverImage && uploadedfiles?.coverImage[0]?.path;
+
+    if(!(avatarLocalPath && coverImageLocalPath)) // if both the file is undefined
+    {
+        throw new ApiError(400, "File not found");
+    }
+
+    let avatarUploadResponse,coverImageUploadResponse,userResponse ;
+    if(avatarLocalPath)
+    {
+        avatarUploadResponse = await uploadOnCloudinary(avatarLocalPath);
+    }
+    if(coverImageLocalPath)
+    {
+        coverImageUploadResponse = await uploadOnCloudinary(coverImageLocalPath);
+    }
+
+    if(!(avatarUploadResponse && coverImageUploadResponse))
+    {
+        throw new ApiError(500, "Error while uploading the file");
+    }
+    else
+    {
+        userResponse = User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    avatar: avatarUploadResponse && avatarUploadResponse?.url,
+                    coverImage: coverImageUploadResponse && coverImageUploadResponse?.url
+                }
+            },
+            {
+                new: true
+            }
+        ).select("-password -refreshToken")
+    }
+
+    res.status(200).json(
+        new ApiRespose(200, userResponse, "Image Updated Successfully")
+    );
+    
+
+})
 
 const generateAccessAndRefreshToken = async(user) => {
     try {
@@ -215,4 +314,12 @@ const generateAccessAndRefreshToken = async(user) => {
 } 
 
 
-export { registerUser, loginUser, logoutUser, newAccessTokenRequest }
+export { registerUser, 
+         loginUser, 
+         logoutUser, 
+         newAccessTokenRequest, 
+         changeCurrentPassword, 
+         getCurrentUser,
+         updateAccountDetails,
+         updateAvatarAndCoverImage
+       }
